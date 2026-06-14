@@ -41,3 +41,39 @@ TCP вважає з'єднання живим доки є ACK. conntrack — д�
 Якщо вони не узгоджені: з'єднання "живе" для TCP але "мертве" для firewall.
 
 Типові місця де це виникає в продакшені: idle DB connections, long-polling HTTP, gRPC, WebSocket, SSH через NAT.
+
+---
+
+## Зв'язок з DDoS
+
+Те що ти щойно відтворив вручну — це рівно те що відбувається автоматично під час **conntrack table exhaustion attack**:
+
+1. Атакуючий шле масово SYN-пакети → кожен створює запис у conntrack в стані `SYN_RECV`
+2. Таблиця заповнюється (`nf_conntrack_count` → `nf_conntrack_max`)
+3. Ядро **автоматично скорочує** `nf_conntrack_tcp_timeout_established` щоб звільнити місце
+4. Легітимні з'єднання починають вмирати — рівно як тут
+5. INVALID DROP добиває: RST теж дропається, додатки не можуть відновитись
+
+```bash
+# Перевір чи атака відбувається прямо зараз
+cat /proc/sys/net/netfilter/nf_conntrack_count   # поточне
+cat /proc/sys/net/netfilter/nf_conntrack_max     # максимум
+
+# Кількість half-open з'єднань — індикатор SYN flood
+conntrack -L | grep SYN_RECV | wc -l
+
+# Звідки йде flood
+conntrack -L | grep SYN_RECV | awk '{print $6}' | cut -d= -f2 \
+  | sort | uniq -c | sort -rn | head
+```
+
+❓ **Бонус-питання:** як відрізнити неправильний timeout від реальної атаки не дивлячись в логи?
+
+<details>
+<summary>Відповідь</summary>
+
+`conntrack -L | grep SYN_RECV | wc -l`
+
+Якщо **тисячі** — атака. Якщо **одиниці** — misconfiguration або нормальний трафік.
+Також: `nf_conntrack_count` близький до `nf_conntrack_max` — ознака exhaustion під навантаженням.
+</details>
