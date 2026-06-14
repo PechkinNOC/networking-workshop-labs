@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій C Hands-on — IPv6 fallback latency",
+  "description": "gai.conf вже виправлений, Python швидкий. Але Java все одно повільна. Самостійне дослідження.",
+  "difficulty": "advanced",
+  "time": "20 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Знайди чому Java все ще повільна",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій B Demo — Docker DNS + blocked egress",
+  "description": "На хості DNS працює. В контейнері — не резолвиться нічого. Demo для фасилітатора.",
+  "difficulty": "intermediate",
+  "time": "20 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Траблшутинг",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "docker"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій A Hands-on — Asymmetric Routing + Firewall",
+  "description": "Та сама проблема — інший перший симптом. Самостійне дослідження.",
+  "difficulty": "intermediate",
+  "time": "25 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Знайди і виправ проблему",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  }
+}

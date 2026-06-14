@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій B Hands-on — Docker DNS + blocked egress",
+  "description": "Два відхилення від demo одночасно. Самостійне дослідження.",
+  "difficulty": "intermediate",
+  "time": "25 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Знайди і виправ проблему",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "docker"
+  }
+}
