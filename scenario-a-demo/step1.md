@@ -6,10 +6,10 @@
 
 ```bash
 # 1. L3 зв'язність
-ip netns exec client ping 10.10.20.1
+from-client ping 10.10.20.1
 
 # 2. TCP — де зависає?
-ip netns exec client curl -v http://10.10.20.1:8080
+from-client curl -v http://10.10.20.1:8080
 
 # 3. Firewall
 iptables -L -n -v

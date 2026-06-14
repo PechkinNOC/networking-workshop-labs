@@ -31,4 +31,11 @@ iptables -I INPUT   -m conntrack --ctstate INVALID -j DROP
 # ss -tlnp shows 0.0.0.0:8080 — looks fine, misleads the investigator
 python3 -m http.server 8080 &>/tmp/httpserver.log &
 
+# Transparent wrapper — participants use "from-client <cmd>" instead of "ip netns exec client <cmd>"
+cat > /usr/local/bin/from-client <<'EOF'
+#!/bin/bash
+ip netns exec client "$@"
+EOF
+chmod +x /usr/local/bin/from-client
+
 echo "done" > /tmp/background-done
