@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій D — З'єднання є, але мовчить (conntrack timeout)",
+  "description": "TCP з'єднання ESTABLISHED, але дані не передаються. Жодного RST, жодної помилки. Опціональне ДЗ після воркшопу.",
+  "difficulty": "advanced",
+  "time": "30 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Відтвори і знайди причину",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  }
+}
