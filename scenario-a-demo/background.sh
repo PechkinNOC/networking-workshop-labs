@@ -37,7 +37,8 @@ sysctl -qw net.ipv4.conf.default.rp_filter=2
 sysctl -qw net.ipv4.conf.eth1.rp_filter=2
 
 # HTTP server bound to the eth1 address only
-python3 -m http.server 8080 --bind 10.10.20.1 &>/tmp/httpserver.log &
+mkdir -p /srv/www && echo 'Hello from the server' > /srv/www/index.html
+python3 -m http.server 8080 --bind 10.10.20.1 --directory /srv/www &>/tmp/httpserver.log &
 
 # Transparent wrapper - participants use "from-client <cmd>" instead of "ip netns exec client <cmd>"
 cat > /usr/local/bin/from-client <<'EOF'

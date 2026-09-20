@@ -38,7 +38,8 @@ sysctl -qw net.ipv4.conf.eth1.rp_filter=2
 
 # DIFFERENCE from demo: HTTP server listens on 0.0.0.0, not the eth1 address
 # ss -tlnp shows 0.0.0.0:8080 - looks fine, misleads the investigator
-python3 -m http.server 8080 &>/tmp/httpserver.log &
+mkdir -p /srv/www && echo 'Hello from the server' > /srv/www/index.html
+python3 -m http.server 8080 --directory /srv/www &>/tmp/httpserver.log &
 
 # Transparent wrapper - participants use "from-client <cmd>" instead of "ip netns exec client <cmd>"
 cat > /usr/local/bin/from-client <<'EOF'
