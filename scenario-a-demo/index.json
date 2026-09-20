@@ -1,6 +1,6 @@
 {
-  "title": "Сценарій A Demo — Asymmetric Routing + Firewall",
-  "description": "Сервіс запущений, ping є, але TCP не проходить. Demo для фасилітатора.",
+  "title": "Сценарій A Demo — Asymmetric Routing",
+  "description": "Сервіс запущений, але з'єднання від клієнта зависає. Demo для фасилітатора.",
   "difficulty": "intermediate",
   "time": "20 minutes",
   "details": {

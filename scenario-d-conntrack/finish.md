@@ -1,10 +1,14 @@
 ## Рішення
 
 **Причина:** conntrack timeout для TCP ESTABLISHED = 10 секунд (замість дефолтних ~5 годин).
-Після 10 секунд без пакетів conntrack "забуває" з'єднання.
-Наступний пакет від сервера → INVALID → DROP.
+Сервер мовчить 15 секунд - довше за timeout, тому conntrack "забуває" з'єднання.
+Наступний пакет від сервера приходить посеред потоку без запису в conntrack → INVALID → DROP.
 RST від TCP stack теж → INVALID → DROP.
 Обидва боки зависають мовчки.
+
+> У цьому середовищі ще вимкнено `nf_conntrack_tcp_loose` (`cat /proc/sys/net/netfilter/nf_conntrack_tcp_loose` покаже 0).
+> З дефолтним `1` conntrack підхопив би з'єднання посеред потоку і воно вижило б. Так зазвичай і буває на хостах
+> без NAT. З NAT або strict-режимом (звичайна річ на firewall/gateway) - з'єднання гине.
 
 ---
 
@@ -46,24 +50,25 @@ TCP вважає з'єднання живим доки є ACK. conntrack — д�
 
 ## Зв'язок з DDoS
 
-Те що ти щойно відтворив вручну — це рівно те що відбувається автоматично під час **conntrack table exhaustion attack**:
+Схожа тиша виникає під час **conntrack table exhaustion** (наприклад, SYN flood):
 
-1. Атакуючий шле масово SYN-пакети → кожен створює запис у conntrack в стані `SYN_RECV`
+1. Атакуючий шле масово SYN-пакети → кожен створює запис у conntrack
 2. Таблиця заповнюється (`nf_conntrack_count` → `nf_conntrack_max`)
-3. Ядро **автоматично скорочує** `nf_conntrack_tcp_timeout_established` щоб звільнити місце
-4. Легітимні з'єднання починають вмирати — рівно як тут
-5. INVALID DROP добиває: RST теж дропається, додатки не можуть відновитись
+3. Ядро пише в `dmesg`: `nf_conntrack: table full, dropping packet` - нові з'єднання (включно з легітимними) мовчки зникають
+4. Типова реакція адміна - **скоротити timeout'и**, щоб швидше звільняти записи
+5. Але тоді починають вмирати легітимні idle-з'єднання - рівно як у цьому сценарії
 
 ```bash
-# Перевір чи атака відбувається прямо зараз
+# Заповненість таблиці - головний індикатор
 cat /proc/sys/net/netfilter/nf_conntrack_count   # поточне
 cat /proc/sys/net/netfilter/nf_conntrack_max     # максимум
+dmesg | grep 'table full'
 
-# Кількість half-open з'єднань — індикатор SYN flood
+# Кількість half-open з'єднань - індикатор SYN flood
 conntrack -L | grep SYN_RECV | wc -l
 
 # Звідки йде flood
-conntrack -L | grep SYN_RECV | awk '{print $6}' | cut -d= -f2 \
+conntrack -L | grep SYN_RECV | awk '{print $5}' | cut -d= -f2 \
   | sort | uniq -c | sort -rn | head
 ```
 
@@ -74,6 +79,6 @@ conntrack -L | grep SYN_RECV | awk '{print $6}' | cut -d= -f2 \
 
 `conntrack -L | grep SYN_RECV | wc -l`
 
-Якщо **тисячі** — атака. Якщо **одиниці** — misconfiguration або нормальний трафік.
-Також: `nf_conntrack_count` близький до `nf_conntrack_max` — ознака exhaustion під навантаженням.
+Якщо **тисячі** - атака. Якщо **одиниці** - misconfiguration або нормальний трафік.
+Також: `nf_conntrack_count` близький до `nf_conntrack_max` - ознака exhaustion під навантаженням.
 </details>

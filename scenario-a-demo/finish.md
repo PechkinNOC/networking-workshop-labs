@@ -1,17 +1,27 @@
 ## Рішення
 
-**Причина:** Асиметричний роутинг → conntrack INVALID → iptables DROP.
+**Причина:** асиметричний роутинг.
 
-SYN від клієнта прийшов через eth1. Але `ip route get 10.10.20.100` показує eth0.
-conntrack не може відстежити з'єднання — пакети потрапляють в INVALID.
+Запит клієнта приходить на `eth1`, але маршрут до 10.10.30.100 в основній таблиці - це default через
+основний інтерфейс. Відповідь виходить не з `eth1`, а через `enp1s0`, і клієнт її ніколи не отримує.
 
-**Рішення — policy routing:**
+Як це видно:
+- `tcpdump -ni eth1` - запити приходять
+- `tcpdump -ni enp1s0` - відповіді виходять не звідти
+- `ip route get 10.10.30.100` - `dev enp1s0`
+- `iptables -L -n -v` - чисто, firewall не винен
+
+**Рішення - policy routing:**
 
 ```bash
-ip rule add from 10.10.20.0/24 table 100
-ip route add default via <eth1_gw> table 100
+ip route add 10.10.20.0/24 dev eth1 table 100
+ip route add default via 10.10.20.100 dev eth1 table 100
+ip rule add from 10.10.20.1 table 100
 ```
 
-Тепер відповідь іде через eth1. conntrack бачить повний цикл → ESTABLISHED.
+Трафік з адреси 10.10.20.1 тепер шукає маршрут у таблиці 100 і виходить через `eth1`.
 
-**Persistent:** налаштувати через netplan або `/etc/network/interfaces`.
+**Питання для обговорення:** чому не додати звичайний статичний маршрут `10.10.30.0/24 via 10.10.20.100`?
+Для однієї відомої підмережі це спрацює. Policy routing потрібен, коли клієнтів багато й адреси невідомі наперед.
+
+**Persistent:** налаштувати через netplan (`routing-policy` і `routes` з `table: 100`) або systemd-networkd.

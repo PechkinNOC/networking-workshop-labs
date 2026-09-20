@@ -1,14 +1,22 @@
 #!/bin/bash
 
-# Short conntrack timeout — connection entry disappears after 10 seconds of "idle"
-# (idle from conntrack's perspective: no packets that reset the timer)
+# conntrack userspace tool (not in the base image) and the kernel module
+apt-get install -y -q conntrack 2>/dev/null
+modprobe nf_conntrack 2>/dev/null
+
+# Short conntrack timeout - the entry disappears after 10 seconds without packets
 echo 10 > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
 
-# Drop INVALID packets — without this rule TCP would eventually recover via retransmit+RST
-# With it: RST itself arrives as INVALID and is also dropped → silent hang
+# Strict TCP tracking: a mid-stream packet with no conntrack entry is INVALID.
+# With the default (tcp_loose=1) conntrack would silently re-create the entry
+# and the connection would survive - as it does on most non-NAT hosts.
+echo 0 > /proc/sys/net/netfilter/nf_conntrack_tcp_loose
+
+# Drop INVALID packets - without this rule TCP would eventually recover via retransmit+RST
+# With it: RST itself arrives as INVALID and is also dropped -> silent hang
 iptables -I INPUT -m conntrack --ctstate INVALID -j DROP
 
-# Server: sends a timestamped message every 2 seconds
+# Server: sends a timestamped message every 15 seconds (idle longer than the 10s conntrack timeout)
 cat > /opt/server.py << 'EOF'
 import socket, time
 
@@ -29,7 +37,7 @@ while True:
         print(f"Send failed: {e}")
         break
     i += 1
-    time.sleep(2)
+    time.sleep(15)
 EOF
 
 # Client: receives and prints with timestamps
