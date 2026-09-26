@@ -13,16 +13,24 @@ cat > /etc/docker/daemon.json <<'EOF'
 }
 EOF
 systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
-sleep 3
-DOCKER0_IP=$(ip -4 addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)
+
+# Wait for docker0 to actually come up - a fixed sleep isn't reliable enough
+DOCKER0_IP=""
+for i in $(seq 1 15); do
+    DOCKER0_IP=$(ip -4 addr show docker0 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1)
+    [ -n "$DOCKER0_IP" ] && break
+    sleep 1
+done
 
 # Configure unbound to listen on 127.53.53.53 (non-standard loopback address)
 # and on docker0's actual address (whatever it ended up being - don't
 # hardcode 172.31.0.1, this env is exactly what teaches "check, don't guess")
+DOCKER0_IFACE_LINE=""
+[ -n "$DOCKER0_IP" ] && DOCKER0_IFACE_LINE="    interface: ${DOCKER0_IP}"
 cat > /etc/unbound/unbound.conf.d/workshop.conf <<EOF
 server:
     interface: 127.53.53.53
-    interface: ${DOCKER0_IP}
+${DOCKER0_IFACE_LINE}
     access-control: 127.0.0.0/8 allow
     access-control: 172.16.0.0/12 allow
     do-daemonize: no

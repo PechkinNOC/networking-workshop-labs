@@ -14,8 +14,14 @@ EOF
 apt-get install -y -q dnsmasq 2>/dev/null
 rm -f /etc/docker/daemon.json
 systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
-sleep 3
-DOCKER0_IP=$(ip -4 addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)
+
+# Wait for docker0 to actually come up - a fixed sleep isn't reliable enough
+DOCKER0_IP=""
+for i in $(seq 1 15); do
+    DOCKER0_IP=$(ip -4 addr show docker0 2>/dev/null | awk '/inet /{print $2}' | cut -d/ -f1)
+    [ -n "$DOCKER0_IP" ] && break
+    sleep 1
+done
 
 # Start a minimal DNS stub on 127.0.0.53 (host) and docker0's address
 # (reachable from any container - this is what "docker run --dns <docker0
@@ -24,8 +30,10 @@ DOCKER0_IP=$(ip -4 addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)
 # block below (they're what Docker falls back to inside containers). If the
 # host's own resolver used the same blocked servers, host DNS - and the
 # "docker pull" below - would break too.
+LISTEN_ADDRS="127.0.0.53"
+[ -n "$DOCKER0_IP" ] && LISTEN_ADDRS="127.0.0.53,${DOCKER0_IP}"
 cat > /etc/dnsmasq.conf <<EOF
-listen-address=127.0.0.53,${DOCKER0_IP}
+listen-address=${LISTEN_ADDRS}
 bind-interfaces
 no-resolv
 server=9.9.9.9
