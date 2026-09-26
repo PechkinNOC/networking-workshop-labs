@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Ubuntu 24.04's needrestart apt hook can prompt interactively after any
+# package install ("which services to restart?") and hang forever with no
+# TTY attached - confirmed live: apt-get install sat blocked for 50+ minutes
+# with needrestart/dpkg-status children still running. Force it off.
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 # Simulate systemd-resolved: point resolv.conf to 127.0.0.53
 # Docker detects loopback address and replaces it with 8.8.8.8 in containers
 cat > /etc/resolv.conf <<'EOF'

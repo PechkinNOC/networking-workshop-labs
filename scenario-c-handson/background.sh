@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Ubuntu 24.04's needrestart apt hook can prompt interactively after any
+# package install ("which services to restart?") and hang forever with no
+# TTY attached - confirmed live on scenario B: apt-get install sat blocked
+# for 50+ minutes with needrestart/dpkg-status children still running.
+export DEBIAN_FRONTEND=noninteractive
+export NEEDRESTART_MODE=a
+export NEEDRESTART_SUSPEND=1
+
 # Remove any IPv6 default route
 ip -6 route del default 2>/dev/null || true
 
