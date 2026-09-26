@@ -6,14 +6,15 @@ Fallback: Docker прописав `nameserver 8.8.8.8`. Але 8.8.8.8 забл�
 **Рішення:**
 
 ```bash
-# Перевірити IP docker0
+# Перевірити IP docker0 - тут буде дві адреси: шлюз (172.17.0.1) і наш
+# стаб-резолвер (172.17.0.53), додатково піднятий на цьому ж інтерфейсі
 ip addr show docker0
 
-# Запустити контейнер з DNS = docker0 IP
-docker run --dns 172.17.0.1 alpine nslookup google.com
+# Запустити контейнер з DNS = адреса резолвера (не шлюз!)
+docker run --dns 172.17.0.53 alpine nslookup google.com
 
 # Щоб для всіх контейнерів:
-# /etc/docker/daemon.json: { "dns": ["172.17.0.1"] }
+# /etc/docker/daemon.json: { "dns": ["172.17.0.53"] }
 ```
 
 **Ключовий висновок:** Будь-який `127.x.x.x` — loopback namespace хоста. Контейнер ніколи його не побачить.

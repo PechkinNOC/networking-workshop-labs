@@ -30,11 +30,24 @@ for i in $(seq 1 15); do
     sleep 1
 done
 
+# This Killercoda image runs its own dnsmasq (unrelated to this scenario,
+# not managed by systemd) that already owns docker0's gateway address in
+# the default-bridge case - confirmed live on scenario B demo: our own
+# resolver failed with "Address already in use". Add a second address on
+# docker0 (its own gateway's octet, swapped to .53) that didn't exist yet
+# when that platform dnsmasq started, and bind there instead - still
+# on-link and reachable from any container.
+STUB_IP="$DOCKER0_IP"
+if [ -n "$DOCKER0_IP" ]; then
+    STUB_IP="${DOCKER0_IP%.*}.53"
+    ip addr add "${STUB_IP}/32" dev docker0 2>/dev/null || true
+fi
+
 # Configure unbound to listen on 127.53.53.53 (non-standard loopback address)
-# and on docker0's actual address (whatever it ended up being - don't
-# hardcode 172.31.0.1, this env is exactly what teaches "check, don't guess")
+# and on the docker0 alias address above (don't hardcode 172.31.0.1 - this
+# env is exactly what teaches "check, don't guess")
 DOCKER0_IFACE_LINE=""
-[ -n "$DOCKER0_IP" ] && DOCKER0_IFACE_LINE="    interface: ${DOCKER0_IP}"
+[ -n "$DOCKER0_IP" ] && DOCKER0_IFACE_LINE="    interface: ${STUB_IP}"
 cat > /etc/unbound/unbound.conf.d/workshop.conf <<EOF
 server:
     interface: 127.53.53.53

@@ -31,15 +31,30 @@ for i in $(seq 1 15); do
     sleep 1
 done
 
-# Start a minimal DNS stub on 127.0.0.53 (host) and docker0's address
-# (reachable from any container - this is what "docker run --dns <docker0
-# IP>" is meant to hit) so host resolution and the fix both actually work.
+# This Killercoda image runs its own dnsmasq (unrelated to this scenario,
+# not managed by systemd) that already owns docker0's gateway address -
+# confirmed live: our dnsmasq failed with "failed to create listening
+# socket for 172.17.0.1: Address already in use". So we add a SECOND
+# address on docker0 (its own gateway's octet, swapped to .53) that didn't
+# exist yet when that platform dnsmasq started, and bind our stub there
+# instead - still on-link and reachable from any container, just not the
+# address something else already grabbed.
+STUB_IP="$DOCKER0_IP"
+if [ -n "$DOCKER0_IP" ]; then
+    STUB_IP="${DOCKER0_IP%.*}.53"
+    ip addr add "${STUB_IP}/32" dev docker0 2>/dev/null || true
+fi
+
+# Start a minimal DNS stub on 127.0.0.53 (host) and the docker0 alias
+# address above (reachable from any container - this is what "docker run
+# --dns <that address>" is meant to hit) so host resolution and the fix
+# both actually work.
 # NOTE: upstream is Quad9, not 8.8.8.8/8.8.4.4 - those are the addresses we
 # block below (they're what Docker falls back to inside containers). If the
 # host's own resolver used the same blocked servers, host DNS - and the
 # "docker pull" below - would break too.
 LISTEN_ADDRS="127.0.0.53"
-[ -n "$DOCKER0_IP" ] && LISTEN_ADDRS="127.0.0.53,${DOCKER0_IP}"
+[ -n "$DOCKER0_IP" ] && LISTEN_ADDRS="127.0.0.53,${STUB_IP}"
 cat > /etc/dnsmasq.conf <<EOF
 listen-address=${LISTEN_ADDRS}
 bind-interfaces

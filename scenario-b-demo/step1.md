@@ -36,5 +36,10 @@ docker exec webserver ping 127.0.0.53
 
 ```bash
 ip addr show docker0
-docker run --dns $(ip addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1) alpine nslookup google.com
+```
+
+> `docker0` покаже дві адреси - шлюз і наш стаб-резолвер (додано поверх). Бере останню:
+
+```bash
+docker run --dns $(ip addr show docker0 | awk '/inet /{print $2}' | tail -1 | cut -d/ -f1) alpine nslookup google.com
 ```
