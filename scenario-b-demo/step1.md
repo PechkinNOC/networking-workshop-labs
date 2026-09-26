@@ -2,25 +2,39 @@
 
 **Кроки demo:**
 
+**1. Хост живий?**
+
 ```bash
-# 1. Хост живий?
 ping 8.8.8.8
 dig google.com
+```
 
-# 2. Всередині контейнера
+**2. Всередині контейнера**
+
+```bash
 docker exec webserver curl -v https://google.com
 docker exec webserver cat /etc/resolv.conf
+```
 
-# 3. Чому 8.8.8.8 не доступний
+**3. Чому 8.8.8.8 не доступний**
+
+```bash
 docker exec webserver nslookup google.com 8.8.8.8
-# NB: трафік контейнера йде через FORWARD/NAT, не через OUTPUT
 iptables -L DOCKER-USER -n -v
+```
 
-# 4. Що на хості
+> NB: трафік контейнера йде через FORWARD/NAT, не через OUTPUT
+
+**4. Що на хості**
+
+```bash
 cat /etc/resolv.conf
 docker exec webserver ping 127.0.0.53
+```
 
-# 5. Рішення
+**5. Рішення**
+
+```bash
 ip addr show docker0
 docker run --dns $(ip addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1) alpine nslookup google.com
 ```

@@ -2,20 +2,33 @@
 
 Дані зупинились. TCP показує ESTABLISHED. Що далі?
 
+Стан TCP з'єднання:
+
 ```bash
-# Стан TCP з'єднання
 ss -tnp | grep 9000
+```
 
-# conntrack — є запис? В якому стані?
+conntrack — є запис? В якому стані?
+
+```bash
 conntrack -L | grep 9000
+```
 
-# Стежити за conntrack в реальному часі
+Стежити за conntrack в реальному часі:
+
+```bash
 watch -n1 'conntrack -L | grep 9000'
+```
 
-# Чи ростуть INVALID лічильники?
+Чи ростуть INVALID лічильники?
+
+```bash
 iptables -L -n -v
+```
 
-# Що відбувається на рівні пакетів?
+Що відбувається на рівні пакетів?
+
+```bash
 tcpdump -i lo port 9000 -n
 ```
 
