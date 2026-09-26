@@ -13,7 +13,8 @@ docker exec webserver cat /etc/resolv.conf
 
 # 3. Чому 8.8.8.8 не доступний
 docker exec webserver nslookup google.com 8.8.8.8
-iptables -L OUTPUT -n -v
+# NB: трафік контейнера йде через FORWARD/NAT, не через OUTPUT
+iptables -L DOCKER-USER -n -v
 
 # 4. Що на хості
 cat /etc/resolv.conf

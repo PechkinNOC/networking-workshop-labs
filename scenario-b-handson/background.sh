@@ -44,13 +44,22 @@ sleep 3
 # creation never depends on the (about to be broken) DNS path
 docker pull alpine:latest
 
-# Same egress DROP as demo
+# Start the container and install curl into it - both while 8.8.8.8 is
+# still reachable, i.e. before the egress block below
+docker run -d --name webserver alpine:latest sleep 3600
+docker exec webserver apk add --no-cache curl >/tmp/apk-curl.log 2>&1
+
+# Same egress DROP as demo. IMPORTANT: container traffic is routed/NAT'd,
+# not locally-originated, so it never passes through OUTPUT - only through
+# FORWARD/DOCKER-USER. DOCKER-USER is Docker's own hook for this and
+# survives daemon restarts unlike hand-edited FORWARD rules.
+iptables -I DOCKER-USER -p udp --dport 53 -d 8.8.8.8 -j DROP
+iptables -I DOCKER-USER -p tcp --dport 53 -d 8.8.8.8 -j DROP
+iptables -I DOCKER-USER -p udp --dport 53 -d 1.1.1.1 -j DROP
+iptables -I DOCKER-USER -p tcp --dport 53 -d 1.1.1.1 -j DROP
 iptables -I OUTPUT -p udp --dport 53 -d 8.8.8.8 -j DROP
 iptables -I OUTPUT -p tcp --dport 53 -d 8.8.8.8 -j DROP
 iptables -I OUTPUT -p udp --dport 53 -d 1.1.1.1 -j DROP
 iptables -I OUTPUT -p tcp --dport 53 -d 1.1.1.1 -j DROP
-
-# Start a container — DNS will be broken inside
-docker run -d --name webserver alpine:latest sleep 3600
 
 echo "done" > /tmp/background-done
