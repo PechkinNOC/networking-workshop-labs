@@ -9,7 +9,7 @@ EOF
 
 # Start a minimal DNS stub on 127.0.0.53 so host resolution works
 # (simulates systemd-resolved on the host)
-# NOTE: upstream is Quad9, not 8.8.8.8/1.1.1.1 - those are the addresses we
+# NOTE: upstream is Quad9, not 8.8.8.8/8.8.4.4 - those are the addresses we
 # block below (they're what Docker falls back to inside containers). If the
 # host's own resolver used the same blocked servers, host DNS - and the
 # "docker pull" below - would break too.
@@ -39,7 +39,7 @@ docker pull alpine:latest
 docker run -d --name webserver alpine:latest sleep 3600
 docker exec webserver apk add --no-cache curl >/tmp/apk-curl.log 2>&1
 
-# Block egress DNS to 8.8.8.8 and 1.1.1.1 - this is what actually breaks
+# Block egress DNS to 8.8.8.8 and 8.8.4.4 - this is what actually breaks
 # the container (Docker's fallback resolver), not the host.
 #
 # IMPORTANT: container traffic is routed/NAT'd, not locally-originated, so
@@ -50,12 +50,12 @@ docker exec webserver apk add --no-cache curl >/tmp/apk-curl.log 2>&1
 # survives daemon restarts unlike hand-edited FORWARD rules.
 iptables -I DOCKER-USER -p udp --dport 53 -d 8.8.8.8 -j DROP
 iptables -I DOCKER-USER -p tcp --dport 53 -d 8.8.8.8 -j DROP
-iptables -I DOCKER-USER -p udp --dport 53 -d 1.1.1.1 -j DROP
-iptables -I DOCKER-USER -p tcp --dport 53 -d 1.1.1.1 -j DROP
+iptables -I DOCKER-USER -p udp --dport 53 -d 8.8.4.4 -j DROP
+iptables -I DOCKER-USER -p tcp --dport 53 -d 8.8.4.4 -j DROP
 # Also block on OUTPUT in case anything on the host itself queries these
 iptables -I OUTPUT -p udp --dport 53 -d 8.8.8.8 -j DROP
 iptables -I OUTPUT -p tcp --dport 53 -d 8.8.8.8 -j DROP
-iptables -I OUTPUT -p udp --dport 53 -d 1.1.1.1 -j DROP
-iptables -I OUTPUT -p tcp --dport 53 -d 1.1.1.1 -j DROP
+iptables -I OUTPUT -p udp --dport 53 -d 8.8.4.4 -j DROP
+iptables -I OUTPUT -p tcp --dport 53 -d 8.8.4.4 -j DROP
 
 echo "done" > /tmp/background-done
