@@ -1,6 +1,6 @@
 {
   "title": "Сценарій B Demo — Docker DNS + blocked egress",
-  "description": "На хості DNS працює. В контейнері — не резолвиться нічого. Demo для фасилітатора.",
+  "description": "На хості DNS працює. В контейнері — не резолвиться нічого. Demo для ведучого.",
   "difficulty": "intermediate",
   "time": "20 minutes",
   "details": {

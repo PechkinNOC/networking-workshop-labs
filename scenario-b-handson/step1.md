@@ -11,7 +11,7 @@ docker exec webserver nslookup google.com
 cat /etc/resolv.conf
 ip addr show docker0
 
-# Підказки відкриваються поступово в чаті від фасилітатора
+# Підказки відкриваються поступово в чаті від ведучого
 ```
 
 **Ціль:** `nslookup google.com` з контейнера повертає відповідь.

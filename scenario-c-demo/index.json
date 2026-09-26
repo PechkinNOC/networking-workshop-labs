@@ -1,6 +1,6 @@
 {
   "title": "Сценарій C Demo — IPv6 fallback latency",
-  "description": "Моніторинг зелений, але додаток повільний. curl швидкий, Python — ні. Demo для фасилітатора.",
+  "description": "Моніторинг зелений, але додаток повільний. curl швидкий, Python — ні. Demo для ведучого.",
   "difficulty": "advanced",
   "time": "25 minutes",
   "details": {
