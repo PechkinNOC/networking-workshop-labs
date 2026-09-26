@@ -1,29 +1,28 @@
-## Знайди чому Java все ще повільна
+## Знайди і виправ проблему
 
-gai.conf виправлений, Python швидкий. Java — ні.
-
-Перевір gai.conf:
+`ping` не відповідає, `curl -I` працює, повний `curl` висить.
 
 ```bash
-cat /etc/gai.conf
-```
-
-Порівняй Python і Java:
-
-```bash
-python3 -c "import urllib.request, time; t=time.time(); urllib.request.urlopen('https://example.com'); print(f'{time.time()-t:.2f}s')"
-```
-
-```bash
-tail -f /tmp/javadns.log
-```
-
-Перевір Java процес:
-
-```bash
-ps aux | grep java
+from-client ping -c3 10.10.50.2
+from-client curl -I http://10.10.50.2:8080/
+from-client curl -v -m 8 http://10.10.50.2:8080/
 ```
 
 > Підказки відкриваються поступово в чаті від ведучого
 
-**Ціль:** Java процес показує ~0.3с замість ~2с.
+<details>
+<summary>Підказка 1</summary>
+`ping` не відповідає взагалі, не лише для великих пакетів. Це не той самий сценарій, що на demo - тут щось блокує ICMP ширше. Спробуй техніку з demo (`ping -M do -s ...`) - працює вона тут?
+</details>
+
+<details>
+<summary>Підказка 2</summary>
+Якщо `ping` недоступний як інструмент - як ще дізнатись, де саме вузьке місце по MTU? Подивись на самі інтерфейси: `ip -o link show`. Порівняй MTU на обох "плечах".
+</details>
+
+<details>
+<summary>Підказка 3</summary>
+`iptables -L -n -v` - подивись на обидва ICMP-правила і їхні лічильники. Одне зростає від `ping`, інше - від `curl`.
+</details>
+
+**Ціль:** `curl` з клієнта повертає повну сторінку.

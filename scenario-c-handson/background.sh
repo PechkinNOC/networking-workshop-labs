@@ -1,49 +1,54 @@
 #!/bin/bash
 
-# Ubuntu 24.04's needrestart apt hook can prompt interactively after any
-# package install ("which services to restart?") and hang forever with no
-# TTY attached - confirmed live on scenario B: apt-get install sat blocked
-# for 50+ minutes with needrestart/dpkg-status children still running.
-export DEBIAN_FRONTEND=noninteractive
-export NEEDRESTART_MODE=a
-export NEEDRESTART_SUSPEND=1
+# Same PMTUD blackhole as demo, two deliberate differences:
+#  - different bottleneck MTU (1300, not 1400) - the exact threshold from
+#    demo doesn't transfer, has to be found again
+#  - ping is ALSO blocked (ICMP echo-request on FORWARD), not just the
+#    fragmentation-needed message - so the "ping works, curl doesn't" signal
+#    from demo isn't available here. ping just fails outright, which can
+#    misleadingly look like a basic connectivity/firewall problem instead of
+#    a size-dependent one. curl -I (small) still works fine - that's the
+#    real tell.
+#
+# NOTE: tested broader "block ALL icmp types on OUTPUT" first - it broke the
+# demo http.server in a way that looked like a real network effect but did
+# not reproduce with any type-specific rule, on either chain, individually.
+# Sticking to type-specific rules only (confirmed reliable) rather than
+# risk shipping something that may be a sandbox-only artifact.
 
-# Remove any IPv6 default route
-ip -6 route del default 2>/dev/null || true
+sysctl -qw net.ipv4.ip_forward=1
 
-# gai.conf ALREADY FIXED — Python will be fast
-echo 'precedence ::ffff:0:0/96  100' >> /etc/gai.conf
+ip netns add server
+ip link add srv0 type veth peer name srv0p
+ip link set srv0p netns server
+ip addr add 10.10.50.1/24 dev srv0
+ip link set srv0 up mtu 1500
+ip netns exec server ip addr add 10.10.50.2/24 dev srv0p
+ip netns exec server ip link set srv0p up mtu 1500
+ip netns exec server ip link set lo up
+ip netns exec server ip route add default via 10.10.50.1
 
-# Install Java. Needs the JDK, not just the JRE: default-jre has no javac,
-# and the compile step right below would fail (confirmed by inspection -
-# default-jre packages ship the runtime only, javac requires default-jdk).
-apt-get update -q 2>/dev/null
-apt-get install -y -q default-jdk 2>/dev/null
+ip netns add client
+ip link add cli0 type veth peer name cli0p
+ip link set cli0p netns client
+ip addr add 10.10.60.1/24 dev cli0
+ip link set cli0 up mtu 1300
+ip netns exec client ip addr add 10.10.60.2/24 dev cli0p
+ip netns exec client ip link set cli0p up mtu 1500
+ip netns exec client ip link set lo up
+ip netns exec client ip route add default via 10.10.60.1
 
-# Create Java test client (no -Djava.net.preferIPv4Stack=true — this is the bug)
-cat > /opt/TestDns.java << 'JEOF'
-import java.net.*;
-public class TestDns {
-  public static void main(String[] a) throws Exception {
-    System.out.println("Starting Java DNS test loop... (Ctrl+C to stop)");
-    while (true) {
-      long t = System.currentTimeMillis();
-      try {
-        new URL("https://example.com").openConnection().connect();
-        System.out.println("took: " + (System.currentTimeMillis() - t) + "ms");
-      } catch (Exception e) {
-        System.out.println("error after " + (System.currentTimeMillis() - t) + "ms: " + e.getMessage());
-      }
-      Thread.sleep(3000);
-    }
-  }
-}
-JEOF
+iptables -I FORWARD -p icmp --icmp-type echo-request -j DROP
+iptables -I OUTPUT -p icmp --icmp-type fragmentation-needed -j DROP
 
-# Compile
-javac /opt/TestDns.java -d /opt 2>/tmp/javac.log
+mkdir -p /srv/www
+python3 -c "print('Hello from the server. ' + 'B' * 6000)" > /srv/www/index.html
+python3 -m http.server 8080 --bind 10.10.50.2 --directory /srv/www &>/tmp/httpserver.log &
 
-# Start Java process in background (participants will observe its slowness)
-java -cp /opt TestDns &>/tmp/javadns.log &
+cat > /usr/local/bin/from-client <<'EOF'
+#!/bin/bash
+ip netns exec client "$@"
+EOF
+chmod +x /usr/local/bin/from-client
 
 echo "done" > /tmp/background-done

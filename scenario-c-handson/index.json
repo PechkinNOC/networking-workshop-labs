@@ -1,8 +1,8 @@
 {
-  "title": "Сценарій C Hands-on — IPv6 fallback latency",
-  "description": "gai.conf вже виправлений, Python швидкий. Але Java все одно повільна. Самостійне дослідження.",
+  "title": "Сценарій C Hands-on — PMTUD Blackhole",
+  "description": "Цього разу навіть ping не відповідає. Самостійне дослідження.",
   "difficulty": "advanced",
-  "time": "20 minutes",
+  "time": "25 minutes",
   "details": {
     "intro": {
       "text": "intro.md",
@@ -10,7 +10,7 @@
     },
     "steps": [
       {
-        "title": "Знайди чому Java все ще повільна",
+        "title": "Знайди і виправ проблему",
         "text": "step1.md"
       }
     ],

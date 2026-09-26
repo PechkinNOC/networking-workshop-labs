@@ -2,42 +2,53 @@
 
 **Кроки demo:**
 
-**1. Відтворити і порівняти**
+**1. Симптом**
 
 ```bash
-time curl https://example.com
+from-client ping -c3 10.10.50.2
 ```
 
 ```bash
-python3 /opt/testapp.py
-```
-
-> В окремому терміналі
-
-**2. DNS трафік**
-
-```bash
-tcpdump -i any port 53 -n
-```
-
-**3. IPv6 стан**
-
-```bash
-ip addr | grep inet6
-ip -6 route show
-ip -6 neigh show
-```
-
-> Маршрут є (не порожньо!), веде через сусіда, якого нема - `ip -6 neigh show` покаже його в стані `INCOMPLETE`/`FAILED`
-
-**4. Рішення**
-
-```bash
-echo 'precedence ::ffff:0:0/96  100' >> /etc/gai.conf
+from-client curl -I http://10.10.50.2:8080/
 ```
 
 ```bash
-python3 /opt/testapp.py
+from-client curl -v -m 8 http://10.10.50.2:8080/
 ```
 
-> Перевірити, що стало швидко
+> Ping ок, HEAD ок, звичайний GET висить після заголовків - тіло не приходить
+
+**2. Знайти поріг розміру**
+
+```bash
+from-client ping -M do -c1 -s 1372 10.10.50.2
+from-client ping -M do -c1 -s 1400 10.10.50.2
+```
+
+> `-M do` забороняє фрагментацію. Десь між цими розмірами пакет перестає проходити - саме тут пролягає межа
+
+**3. Що на рівні пакетів**
+
+```bash
+tcpdump -ni cli0 -n
+```
+
+> В іншому вікні повторити `from-client curl -m 8 http://10.10.50.2:8080/`. Видно: сервер повторно шле той самий великий сегмент - і жодної ICMP-відповіді ніколи не приходить
+
+**4. Чи щось дропається на роутері**
+
+```bash
+iptables -L OUTPUT -n -v
+```
+
+> Лічильник на правилі з ICMP росте з кожною спробою
+
+**5. Рішення**
+
+```bash
+# Варіант 1 - прибрати блокування (корінна причина)
+iptables -D OUTPUT -p icmp --icmp-type fragmentation-needed -j DROP
+
+# Варіант 2 - MSS clamping (працює навіть якщо ICMP заблокований деінде на шляху)
+iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+```
