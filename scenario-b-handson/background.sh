@@ -13,9 +13,13 @@ server:
 
 forward-zone:
     name: "."
-    forward-addr: 8.8.8.8
-    forward-addr: 1.1.1.1
+    forward-addr: 9.9.9.9
+    forward-addr: 149.112.112.112
 EOF
+# NOTE: upstream is Quad9, not 8.8.8.8/1.1.1.1 - those are the addresses we
+# block below (they're what Docker falls back to inside containers). If the
+# host's own resolver used the same blocked servers, host DNS - and the
+# "docker pull" below - would break too.
 
 systemctl stop systemd-resolved 2>/dev/null || true
 systemctl restart unbound 2>/dev/null || unbound -c /etc/unbound/unbound.conf 2>/dev/null || true
@@ -35,6 +39,10 @@ EOF
 
 systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
 sleep 3
+
+# Pull the image before blocking egress DNS, so the demo container's
+# creation never depends on the (about to be broken) DNS path
+docker pull alpine:latest
 
 # Same egress DROP as demo
 iptables -I OUTPUT -p udp --dport 53 -d 8.8.8.8 -j DROP
