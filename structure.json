@@ -1,0 +1,10 @@
+{
+  "title": "Linux Network Troubleshooting - Hands-on",
+  "description": "Самостійні сценарії для учасників. Demo-образи для ведучого навмисно не входять у цей список.",
+  "items": [
+    { "path": "scenario-a-handson" },
+    { "path": "scenario-b-handson" },
+    { "path": "scenario-c-handson" },
+    { "path": "scenario-d-conntrack" }
+  ]
+}
