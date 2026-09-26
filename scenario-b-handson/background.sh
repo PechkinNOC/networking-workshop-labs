@@ -1,13 +1,30 @@
 #!/bin/bash
 
-# Install unbound as local DNS cache
 apt-get install -y -q unbound 2>/dev/null
 
+# Configure Docker with a non-standard docker0 bridge, and bring it up
+# *before* configuring unbound below - the fix for this scenario points a
+# container's --dns at docker0's address, so unbound needs to actually be
+# listening there, not just on the loopback stub address.
+mkdir -p /etc/docker
+cat > /etc/docker/daemon.json <<'EOF'
+{
+  "bip": "172.31.0.1/24"
+}
+EOF
+systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
+sleep 3
+DOCKER0_IP=$(ip -4 addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)
+
 # Configure unbound to listen on 127.53.53.53 (non-standard loopback address)
-cat > /etc/unbound/unbound.conf.d/workshop.conf <<'EOF'
+# and on docker0's actual address (whatever it ended up being - don't
+# hardcode 172.31.0.1, this env is exactly what teaches "check, don't guess")
+cat > /etc/unbound/unbound.conf.d/workshop.conf <<EOF
 server:
     interface: 127.53.53.53
+    interface: ${DOCKER0_IP}
     access-control: 127.0.0.0/8 allow
+    access-control: 172.16.0.0/12 allow
     do-daemonize: no
     logfile: /tmp/unbound.log
 
@@ -28,17 +45,6 @@ systemctl restart unbound 2>/dev/null || unbound -c /etc/unbound/unbound.conf 2>
 cat > /etc/resolv.conf <<'EOF'
 nameserver 127.53.53.53
 EOF
-
-# Configure Docker with non-standard docker0 bridge
-mkdir -p /etc/docker
-cat > /etc/docker/daemon.json <<'EOF'
-{
-  "bip": "172.31.0.1/24"
-}
-EOF
-
-systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
-sleep 3
 
 # Pull the image before blocking egress DNS, so the demo container's
 # creation never depends on the (about to be broken) DNS path

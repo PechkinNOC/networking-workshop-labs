@@ -7,15 +7,25 @@ nameserver 127.0.0.53
 options edns0 trust-ad
 EOF
 
-# Start a minimal DNS stub on 127.0.0.53 so host resolution works
-# (simulates systemd-resolved on the host)
+# Ensure Docker daemon has no custom DNS (default behavior), and get
+# docker0 up *before* configuring the DNS stub below - the fix at the end
+# of this scenario points a container's --dns at docker0's address, so the
+# stub needs to actually be listening there, not just on loopback.
+apt-get install -y -q dnsmasq 2>/dev/null
+rm -f /etc/docker/daemon.json
+systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
+sleep 3
+DOCKER0_IP=$(ip -4 addr show docker0 | awk '/inet /{print $2}' | cut -d/ -f1)
+
+# Start a minimal DNS stub on 127.0.0.53 (host) and docker0's address
+# (reachable from any container - this is what "docker run --dns <docker0
+# IP>" is meant to hit) so host resolution and the fix both actually work.
 # NOTE: upstream is Quad9, not 8.8.8.8/8.8.4.4 - those are the addresses we
 # block below (they're what Docker falls back to inside containers). If the
 # host's own resolver used the same blocked servers, host DNS - and the
 # "docker pull" below - would break too.
-apt-get install -y -q dnsmasq 2>/dev/null
-cat > /etc/dnsmasq.conf <<'EOF'
-listen-address=127.0.0.53
+cat > /etc/dnsmasq.conf <<EOF
+listen-address=127.0.0.53,${DOCKER0_IP}
 bind-interfaces
 no-resolv
 server=9.9.9.9
@@ -23,12 +33,7 @@ server=149.112.112.112
 EOF
 systemctl stop systemd-resolved 2>/dev/null || true
 dnsmasq --conf-file=/etc/dnsmasq.conf &>/tmp/dnsmasq.log &
-
-# Ensure Docker daemon has no custom DNS (default behavior)
-rm -f /etc/docker/daemon.json
-systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
-
-sleep 3
+sleep 1
 
 # Pull the image before blocking egress DNS, so the demo container's
 # creation never depends on the (about to be broken) DNS path
