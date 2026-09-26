@@ -50,7 +50,7 @@ iptables -I OUTPUT -p icmp --icmp-type fragmentation-needed -j DROP
 # carry, so a real transfer is guaranteed to hit the bottleneck.
 mkdir -p /srv/www
 python3 -c "print('Hello from the server. ' + 'A' * 6000)" > /srv/www/index.html
-python3 -m http.server 8080 --bind 10.10.50.2 --directory /srv/www &>/tmp/httpserver.log &
+ip netns exec server python3 -m http.server 8080 --bind 10.10.50.2 --directory /srv/www &>/tmp/httpserver.log &
 
 # Transparent wrapper - participants use "from-client <cmd>" instead of "ip netns exec client <cmd>"
 cat > /usr/local/bin/from-client <<'EOF'
