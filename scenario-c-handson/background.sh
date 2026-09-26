@@ -14,9 +14,11 @@ ip -6 route del default 2>/dev/null || true
 # gai.conf ALREADY FIXED — Python will be fast
 echo 'precedence ::ffff:0:0/96  100' >> /etc/gai.conf
 
-# Install Java
+# Install Java. Needs the JDK, not just the JRE: default-jre has no javac,
+# and the compile step right below would fail (confirmed by inspection -
+# default-jre packages ship the runtime only, javac requires default-jdk).
 apt-get update -q 2>/dev/null
-apt-get install -y -q default-jre 2>/dev/null
+apt-get install -y -q default-jdk 2>/dev/null
 
 # Create Java test client (no -Djava.net.preferIPv4Stack=true — this is the bug)
 cat > /opt/TestDns.java << 'JEOF'

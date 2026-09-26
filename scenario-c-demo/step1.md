@@ -25,7 +25,10 @@ tcpdump -i any port 53 -n
 ```bash
 ip addr | grep inet6
 ip -6 route show
+ip -6 neigh show
 ```
+
+> Маршрут є (не порожньо!), веде через сусіда, якого нема - `ip -6 neigh show` покаже його в стані `INCOMPLETE`/`FAILED`
 
 **4. Рішення**
 
