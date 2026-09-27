@@ -37,6 +37,12 @@ address=/test/10.77.0.5
 server=9.9.9.9
 EOF
 systemctl stop systemd-resolved 2>/dev/null || true
+# Installing the dnsmasq package auto-starts its own systemd service, which
+# grabs 127.0.0.1:53 before our own instance gets a chance to - confirmed
+# live: "failed to create listening socket for 127.0.0.1: Address already
+# in use". Stop it first.
+systemctl stop dnsmasq 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
 dnsmasq --conf-file=/etc/dnsmasq.conf &>/tmp/dnsmasq.log &
 sleep 1
 cat > /etc/resolv.conf <<'EOF'
