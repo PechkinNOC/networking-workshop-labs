@@ -1,0 +1,24 @@
+{
+  "title": "Розігрів Demo — /etc/hosts проти DNS",
+  "description": "curl не працює, DNS резолвиться правильно. Живий формат: чат підказує наступний крок. Demo для ведучого.",
+  "difficulty": "beginner",
+  "time": "15 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Веди за чатом",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  }
+}
