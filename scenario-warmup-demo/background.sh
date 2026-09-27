@@ -28,10 +28,19 @@ cat > /etc/dnsmasq.conf <<'EOF'
 listen-address=127.0.0.1
 bind-interfaces
 no-resolv
+no-hosts
 address=/api.internal/1.2.3.4
 server=9.9.9.9
 EOF
 systemctl stop systemd-resolved 2>/dev/null || true
+# Installing the dnsmasq package auto-starts its own systemd service with
+# the stock (unconfigured) config, which reads /etc/hosts by default and
+# grabs every local address before our own instance gets a chance to bind
+# - confirmed live: it answered api.internal from /etc/hosts (5.6.7.8)
+# instead of our own config's 1.2.3.4. Stop it first; "no-hosts" above is
+# a second safety net so our own instance never depends on /etc/hosts either.
+systemctl stop dnsmasq 2>/dev/null || true
+systemctl disable dnsmasq 2>/dev/null || true
 dnsmasq --conf-file=/etc/dnsmasq.conf &>/tmp/dnsmasq.log &
 sleep 1
 cat > /etc/resolv.conf <<'EOF'
