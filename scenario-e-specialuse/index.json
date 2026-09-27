@@ -1,0 +1,24 @@
+{
+  "title": "Сценарій E — Інструмент, який \"не бачить\" твій DNS (RFC 6761)",
+  "description": "dig резолвить нормально, окремий libunbound-інструмент — ні, навіть з явним форвардингом. Бонус / домашнє завдання для просунутих.",
+  "difficulty": "advanced",
+  "time": "25 minutes",
+  "details": {
+    "intro": {
+      "text": "intro.md",
+      "background": "background.sh"
+    },
+    "steps": [
+      {
+        "title": "Знайди і виправ проблему",
+        "text": "step1.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  }
+}
