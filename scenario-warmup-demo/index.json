@@ -1,5 +1,5 @@
 {
-  "title": "Розігрів Demo — /etc/hosts проти DNS",
+  "title": "Розігрів Demo",
   "description": "curl не працює, DNS резолвиться правильно. Живий формат: чат підказує наступний крок. Demo для ведучого.",
   "difficulty": "beginner",
   "time": "15 minutes",
