@@ -1,6 +1,6 @@
 ## Рішення
 
-**Причина:** Docker побачив `127.0.0.53` в `/etc/resolv.conf` — loopback, недоступний з контейнера.
+**Причина:** Docker побачив `127.0.0.53` в `/etc/resolv.conf` - loopback, недоступний з контейнера.
 Fallback: Docker прописав `nameserver 8.8.8.8`. Але 8.8.8.8 заблокований egress правилами.
 
 **Рішення:**
@@ -17,4 +17,4 @@ docker run --dns 172.17.0.53 alpine nslookup google.com
 # /etc/docker/daemon.json: { "dns": ["172.17.0.53"] }
 ```
 
-**Ключовий висновок:** Будь-який `127.x.x.x` — loopback namespace хоста. Контейнер ніколи його не побачить.
+**Ключовий висновок:** Будь-який `127.x.x.x` - loopback namespace хоста. Контейнер ніколи його не побачить.

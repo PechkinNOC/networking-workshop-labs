@@ -20,7 +20,7 @@ unbound-host -r db1.test
 
 <details>
 <summary>Підказка 3</summary>
-`man unbound-host` → опція `-C <configfile>` — завантажує `unbound.conf`-подібний конфіг. Що там можна прописати для зони `test.`, щоб прибрати вбудовану обробку?
+`man unbound-host` -> опція `-C <configfile>` - завантажує `unbound.conf`-подібний конфіг. Що там можна прописати для зони `test.`, щоб прибрати вбудовану обробку?
 </details>
 
 **Ціль:** `unbound-host -C <твій конфіг> db1.test` повертає `10.77.0.5`.

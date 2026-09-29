@@ -8,7 +8,7 @@
 ss -tnp | grep 9000
 ```
 
-conntrack — є запис? В якому стані?
+conntrack - є запис? В якому стані?
 
 ```bash
 conntrack -L | grep 9000
@@ -46,5 +46,5 @@ conntrack має власні таймаути для TCP станів. Що с�
 
 <details>
 <summary>Підказка 3</summary>
-Перевір /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established — яке значення?
+Перевір /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established - яке значення?
 </details>

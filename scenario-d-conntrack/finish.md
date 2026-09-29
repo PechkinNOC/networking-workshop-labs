@@ -2,8 +2,8 @@
 
 **Причина:** conntrack timeout для TCP ESTABLISHED = 10 секунд (замість дефолтних ~5 годин).
 Сервер мовчить 15 секунд - довше за timeout, тому conntrack "забуває" з'єднання.
-Наступний пакет від сервера приходить посеред потоку без запису в conntrack → INVALID → DROP.
-RST від TCP stack теж → INVALID → DROP.
+Наступний пакет від сервера приходить посеред потоку без запису в conntrack -> INVALID -> DROP.
+RST від TCP stack теж -> INVALID -> DROP.
 Обидва боки зависають мовчки.
 
 > У цьому середовищі ще вимкнено `nf_conntrack_tcp_loose` (`cat /proc/sys/net/netfilter/nf_conntrack_tcp_loose` покаже 0).
@@ -12,7 +12,7 @@ RST від TCP stack теж → INVALID → DROP.
 
 ---
 
-**Варіант 1 — збільшити timeout:**
+**Варіант 1 - збільшити timeout:**
 
 ```bash
 echo 3600 > /proc/sys/net/netfilter/nf_conntrack_tcp_timeout_established
@@ -25,7 +25,7 @@ echo 'net.netfilter.nf_conntrack_tcp_timeout_established = 3600' \
 sysctl -p /etc/sysctl.d/99-conntrack.conf
 ```
 
-**Варіант 2 — TCP keepalive (правильніше):**
+**Варіант 2 - TCP keepalive (правильніше):**
 
 Keepalive probe кожні 5 секунд тримає conntrack entry живим і виявляє мертве з'єднання:
 
@@ -40,8 +40,8 @@ s.setsockopt(socket.IPPROTO_TCP, socket.TCP_KEEPCNT, 3)
 
 ---
 
-**Ключовий висновок:** conntrack і TCP — два незалежних механізми з різними таймаутами.
-TCP вважає з'єднання живим доки є ACK. conntrack — доки бачить пакети в межах свого timeout.
+**Ключовий висновок:** conntrack і TCP - два незалежних механізми з різними таймаутами.
+TCP вважає з'єднання живим доки є ACK. conntrack - доки бачить пакети в межах свого timeout.
 Якщо вони не узгоджені: з'єднання "живе" для TCP але "мертве" для firewall.
 
 Типові місця де це виникає в продакшені: idle DB connections, long-polling HTTP, gRPC, WebSocket, SSH через NAT.
@@ -52,8 +52,8 @@ TCP вважає з'єднання живим доки є ACK. conntrack — д�
 
 Схожа тиша виникає під час **conntrack table exhaustion** (наприклад, SYN flood):
 
-1. Атакуючий шле масово SYN-пакети → кожен створює запис у conntrack
-2. Таблиця заповнюється (`nf_conntrack_count` → `nf_conntrack_max`)
+1. Атакуючий шле масово SYN-пакети -> кожен створює запис у conntrack
+2. Таблиця заповнюється (`nf_conntrack_count` -> `nf_conntrack_max`)
 3. Ядро пише в `dmesg`: `nf_conntrack: table full, dropping packet` - нові з'єднання (включно з легітимними) мовчки зникають
 4. Типова реакція адміна - **скоротити timeout'и**, щоб швидше звільняти записи
 5. Але тоді починають вмирати легітимні idle-з'єднання - рівно як у цьому сценарії

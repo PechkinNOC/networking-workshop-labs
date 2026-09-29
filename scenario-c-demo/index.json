@@ -1,5 +1,5 @@
 {
-  "title": "Сценарій C Demo — PMTUD Blackhole",
+  "title": "Сценарій C Demo",
   "description": "Ping працює, HEAD працює, звичайний GET висить назавжди. Demo для ведучого.",
   "difficulty": "advanced",
   "time": "25 minutes",
