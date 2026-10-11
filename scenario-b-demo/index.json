@@ -1,5 +1,5 @@
 {
-  "title": "Сценарій B Demo",
+  "title": "Сценарій B Demo [L3]",
   "description": "На хості DNS працює. В контейнері - не резолвиться нічого. Demo для ведучого.",
   "difficulty": "intermediate",
   "time": "20 minutes",
